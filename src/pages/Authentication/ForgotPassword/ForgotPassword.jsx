@@ -1,4 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(email) {
+  return EMAIL_REGEX.test(email.trim());
+}
+
+function validateEmail(email) {
+  if (!email.trim()) return 'Email is required';
+  if (!isValidEmail(email)) return 'Please enter a valid email address';
+  return '';
+}
 
 const authStyles = `
   .auth-page {
@@ -84,6 +97,31 @@ const authStyles = `
     color: #9ca3af;
   }
 
+  .auth-input-invalid {
+    border-color: #dc2626;
+  }
+
+  .auth-input-invalid:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+
+  .auth-input-valid {
+    border-color: #16a34a;
+  }
+
+  .auth-input-valid:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  }
+
+  .auth-error {
+    margin: 0;
+    font-size: 12px;
+    color: #dc2626;
+    line-height: 1.4;
+  }
+
   .auth-button {
     width: 100%;
     height: 44px;
@@ -100,6 +138,15 @@ const authStyles = `
 
   .auth-button:hover {
     background-color: #1648c0;
+  }
+
+  .auth-button:disabled {
+    background-color: #93b4f0;
+    cursor: not-allowed;
+  }
+
+  .auth-button:disabled:hover {
+    background-color: #93b4f0;
   }
 
   .auth-footer {
@@ -133,6 +180,52 @@ const authStyles = `
 `;
 
 function ForgotPassword() {
+  const [formData, setFormData] = useState({ email: '' });
+  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+
+  const errors = {
+    email: validateEmail(formData.email),
+  };
+
+  const isFormValid = !errors.email;
+
+  function handleBlur(field) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  function handleChange(field, value) {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function getInputClassName(field) {
+    const classes = ['auth-input'];
+    const showValidation = touched[field] || submitted;
+
+    if (showValidation) {
+      if (errors[field]) {
+        classes.push('auth-input-invalid');
+      } else if (formData[field]) {
+        classes.push('auth-input-valid');
+      }
+    }
+
+    return classes.join(' ');
+  }
+
+  function shouldShowError(field) {
+    return (touched[field] || submitted) && errors[field];
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitted(true);
+
+    if (!isFormValid) {
+      return;
+    }
+  }
+
   return (
     <div className="auth-page">
       <style>{authStyles}</style>
@@ -142,19 +235,23 @@ function ForgotPassword() {
           Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
 
-        <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
             <label className="auth-label" htmlFor="forgot-email">Email Address</label>
             <input
               id="forgot-email"
               type="email"
-              className="auth-input"
+              className={getInputClassName('email')}
               placeholder="Enter your email address"
               autoComplete="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              onBlur={() => handleBlur('email')}
             />
+            {shouldShowError('email') && <p className="auth-error">{errors.email}</p>}
           </div>
 
-          <button type="submit" className="auth-button">Send Reset Link</button>
+          <button type="submit" className="auth-button" disabled={!isFormValid}>Send Reset Link</button>
         </form>
 
         <div className="auth-footer">

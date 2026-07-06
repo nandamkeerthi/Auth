@@ -1,6 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(email) {
+  return EMAIL_REGEX.test(email.trim());
+}
+
+function validateLoginEmail(email) {
+  if (!email.trim()) return 'Email is required';
+  if (!isValidEmail(email)) return 'Please enter a valid email address';
+  return '';
+}
+
+function validateLoginPassword(password) {
+  if (!password) return 'Password is required';
+  if (password.length < 8) return 'Password must be at least 8 characters';
+  return '';
+}
+
 const authStyles = `
   .auth-page {
     display: flex;
@@ -100,6 +118,31 @@ const authStyles = `
     color: #9ca3af;
   }
 
+  .auth-input-invalid {
+    border-color: #dc2626;
+  }
+
+  .auth-input-invalid:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+
+  .auth-input-valid {
+    border-color: #16a34a;
+  }
+
+  .auth-input-valid:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  }
+
+  .auth-error {
+    margin: 0;
+    font-size: 12px;
+    color: #dc2626;
+    line-height: 1.4;
+  }
+
   .auth-password-wrapper {
     position: relative;
   }
@@ -170,6 +213,15 @@ const authStyles = `
     background-color: #1648c0;
   }
 
+  .auth-button:disabled {
+    background-color: #93b4f0;
+    cursor: not-allowed;
+  }
+
+  .auth-button:disabled:hover {
+    background-color: #93b4f0;
+  }
+
   .auth-footer {
     margin-top: 24px;
     display: flex;
@@ -226,6 +278,52 @@ function EyeIcon({ visible }) {
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+
+  const errors = {
+    email: validateLoginEmail(formData.email),
+    password: validateLoginPassword(formData.password),
+  };
+
+  const isFormValid = !errors.email && !errors.password;
+
+  function handleBlur(field) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  function handleChange(field, value) {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function getInputClassName(field) {
+    const classes = ['auth-input'];
+    const showValidation = touched[field] || submitted;
+
+    if (showValidation) {
+      if (errors[field]) {
+        classes.push('auth-input-invalid');
+      } else if (formData[field]) {
+        classes.push('auth-input-valid');
+      }
+    }
+
+    return classes.join(' ');
+  }
+
+  function shouldShowError(field) {
+    return (touched[field] || submitted) && errors[field];
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitted(true);
+
+    if (!isFormValid) {
+      return;
+    }
+  }
 
   return (
     <div className="auth-page">
@@ -235,16 +333,20 @@ function Login() {
         <h1 className="auth-heading">Welcome Back</h1>
         <p className="auth-subheading">Sign in to your account to continue</p>
 
-        <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
             <label className="auth-label" htmlFor="login-email">Email</label>
             <input
               id="login-email"
               type="email"
-              className="auth-input"
+              className={getInputClassName('email')}
               placeholder="Enter your email"
               autoComplete="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              onBlur={() => handleBlur('email')}
             />
+            {shouldShowError('email') && <p className="auth-error">{errors.email}</p>}
           </div>
 
           <div className="auth-field">
@@ -253,9 +355,12 @@ function Login() {
               <input
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
-                className="auth-input"
+                className={getInputClassName('password')}
                 placeholder="Enter your password"
                 autoComplete="current-password"
+                value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                onBlur={() => handleBlur('password')}
               />
               <button
                 type="button"
@@ -266,6 +371,7 @@ function Login() {
                 <EyeIcon visible={showPassword} />
               </button>
             </div>
+            {shouldShowError('password') && <p className="auth-error">{errors.password}</p>}
           </div>
 
           <div className="auth-checkbox-row">
@@ -273,7 +379,7 @@ function Login() {
             <label className="auth-checkbox-label" htmlFor="remember-me">Remember Me</label>
           </div>
 
-          <button type="submit" className="auth-button">Login</button>
+          <button type="submit" className="auth-button" disabled={!isFormValid}>Login</button>
         </form>
 
         <div className="auth-footer">
