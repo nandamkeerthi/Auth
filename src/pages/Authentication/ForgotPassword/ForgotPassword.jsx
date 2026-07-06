@@ -40,10 +40,6 @@ const authStyles = `
     padding: 40px 36px;
   }
 
-  .auth-card-wide {
-    max-width: 520px;
-  }
-
   .auth-heading {
     margin: 0 0 8px;
     font-size: 24px;
@@ -173,7 +169,7 @@ const authStyles = `
   }
 
   .auth-success {
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     padding: 12px 14px;
     border-radius: 8px;
     background-color: #ecfdf5;
@@ -184,71 +180,16 @@ const authStyles = `
     text-align: center;
   }
 
-  .auth-email-preview {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .auth-email-preview-label {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 600;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .auth-email-preview-card {
-    padding: 24px;
-    border-radius: 10px;
+  .auth-info-note {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
     background-color: #f8fafc;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  .auth-email-preview-title {
-    margin: 0 0 16px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-  }
-
-  .auth-email-preview-body {
-    margin: 0 0 12px;
-    font-size: 13px;
-    color: #4b5563;
+    color: #6b7280;
+    font-size: 12px;
     line-height: 1.6;
-  }
-
-  .auth-email-preview-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 38px;
-    margin: 8px 0 16px;
-    padding: 0 18px;
-    border-radius: 8px;
-    background-color: #1a56db;
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .auth-email-preview-btn:hover {
-    background-color: #1648c0;
-  }
-
-  .auth-email-preview-note {
-    margin: 16px 0 0;
-    padding-top: 12px;
-    border-top: 1px solid #e2e8f0;
-    font-size: 11px;
-    color: #9ca3af;
-    line-height: 1.5;
-    font-style: italic;
+    text-align: center;
   }
 
   @media (max-width: 480px) {
@@ -259,10 +200,6 @@ const authStyles = `
     .auth-heading {
       font-size: 22px;
     }
-
-    .auth-email-preview-card {
-      padding: 20px;
-    }
   }
 `;
 
@@ -270,7 +207,7 @@ function ForgotPassword() {
   const [formData, setFormData] = useState({ email: '' });
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   const errors = {
     email: validateEmail(formData.email),
@@ -284,7 +221,6 @@ function ForgotPassword() {
 
   function handleChange(field, value) {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setShowEmailPreview(false);
   }
 
   function getInputClassName(field) {
@@ -314,64 +250,62 @@ function ForgotPassword() {
       return;
     }
 
-    setShowEmailPreview(true);
+    // TODO: Call POST /forgot-password API
+  //
+  // Backend will:
+  // 1. Verify email
+  // 2. Generate secure reset token
+  // 3. Store token in database
+  // 4. Send password reset email
+  //
+  // Expected request body:
+  // { email: formData.email }
+  //
+  // The .NET backend will verify the email exists, generate a secure token,
+  // store it in the database, and send a real email containing a link such as:
+  // https://your-domain.com/reset-password?token=<secure-token>
+
+    setRequestSent(true);
   }
 
   return (
     <div className="auth-page">
       <style>{authStyles}</style>
-      <div className={`auth-card${showEmailPreview ? ' auth-card-wide' : ''}`}>
+      <div className="auth-card">
         <h1 className="auth-heading">Forgot Password</h1>
         <p className="auth-subheading">
           Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
 
-        {showEmailPreview && (
-          <div className="auth-success">
-            If an account exists with this email address, a password reset link will be sent.
-          </div>
-        )}
-
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="forgot-email">Email Address</label>
-            <input
-              id="forgot-email"
-              type="email"
-              className={getInputClassName('email')}
-              placeholder="Enter your email address"
-              autoComplete="email"
-              value={formData.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              onBlur={() => handleBlur('email')}
-            />
-            {shouldShowError('email') && <p className="auth-error">{errors.email}</p>}
-          </div>
-
-          <button type="submit" className="auth-button" disabled={!isFormValid}>Send Reset Link</button>
-        </form>
-
-        {showEmailPreview && (
-          <div className="auth-email-preview">
-            <p className="auth-email-preview-label">Email Preview</p>
-            <div className="auth-email-preview-card">
-              <h2 className="auth-email-preview-title">Password Reset Request</h2>
-              <p className="auth-email-preview-body">Hi,</p>
-              <p className="auth-email-preview-body">
-                We received a request to reset your password for the AI-Based Application
-                Maintenance and Support Workbench.
-              </p>
-              <p className="auth-email-preview-body">Click the button below to reset your password.</p>
-              <Link to="/reset-password" className="auth-email-preview-btn">Reset Password</Link>
-              <p className="auth-email-preview-body">
-                If you did not request a password reset, you can safely ignore this email.
-              </p>
-              <p className="auth-email-preview-note">
-                For frontend simulation only, clicking the Reset Password button inside this
-                preview is not an actual email.
-              </p>
+        {requestSent ? (
+          <>
+            <div className="auth-success">
+              If an account exists with this email address, a password reset link will be sent.
             </div>
-          </div>
+            <p className="auth-info-note">
+              Currently this project is running in frontend-only mode.
+              A real password reset email will be sent after the backend is integrated.
+            </p>
+          </>
+        ) : (
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="forgot-email">Email Address</label>
+              <input
+                id="forgot-email"
+                type="email"
+                className={getInputClassName('email')}
+                placeholder="Enter your email address"
+                autoComplete="email"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                onBlur={() => handleBlur('email')}
+              />
+              {shouldShowError('email') && <p className="auth-error">{errors.email}</p>}
+            </div>
+
+            <button type="submit" className="auth-button" disabled={!isFormValid}>Send Reset Link</button>
+          </form>
         )}
 
         <div className="auth-footer">
