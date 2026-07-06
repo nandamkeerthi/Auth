@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 function validateStrongPassword(password) {
@@ -214,6 +214,12 @@ const authStyles = `
     text-align: center;
   }
 
+  .auth-success-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
   @media (max-width: 480px) {
     .auth-card {
       padding: 32px 24px;
@@ -249,29 +255,7 @@ function ResetPassword() {
   const [formData, setFormData] = useState({ password: '', confirmPassword: '' });
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const successTimeoutRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (successTimeoutRef.current) {
-        clearTimeout(successTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  function showSuccess(message) {
-    setSuccessMessage(message);
-
-    if (successTimeoutRef.current) {
-      clearTimeout(successTimeoutRef.current);
-    }
-
-    successTimeoutRef.current = setTimeout(() => {
-      setSuccessMessage('');
-      successTimeoutRef.current = null;
-    }, 3000);
-  }
+  const [resetComplete, setResetComplete] = useState(false);
 
   const errors = {
     password: validateStrongPassword(formData.password),
@@ -315,10 +299,7 @@ function ResetPassword() {
       return;
     }
 
-    showSuccess('Password has been reset successfully.');
-    setFormData({ password: '', confirmPassword: '' });
-    setTouched({});
-    setSubmitted(false);
+    setResetComplete(true);
   }
 
   return (
@@ -328,65 +309,72 @@ function ResetPassword() {
         <h1 className="auth-heading">Reset Password</h1>
         <p className="auth-subheading">Enter your new password below to complete the reset process.</p>
 
-        {successMessage && <div className="auth-success">{successMessage}</div>}
-
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="reset-password">New Password</label>
-            <div className="auth-password-wrapper">
-              <input
-                id="reset-password"
-                type={showPassword ? 'text' : 'password'}
-                className={getInputClassName('password')}
-                placeholder="Enter new password"
-                autoComplete="new-password"
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                onBlur={() => handleBlur('password')}
-              />
-              <button
-                type="button"
-                className="auth-toggle-password"
-                onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <EyeIcon visible={showPassword} />
-              </button>
-            </div>
-            {shouldShowError('password') && <p className="auth-error">{errors.password}</p>}
+        {resetComplete ? (
+          <div className="auth-success-actions">
+            <div className="auth-success">Your password has been reset successfully.</div>
+            <Link to="/login" className="auth-button">Go to Login</Link>
           </div>
-
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="reset-confirm-password">Confirm Password</label>
-            <div className="auth-password-wrapper">
-              <input
-                id="reset-confirm-password"
-                type={showPassword ? 'text' : 'password'}
-                className={getInputClassName('confirmPassword')}
-                placeholder="Confirm new password"
-                autoComplete="new-password"
-                value={formData.confirmPassword}
-                onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                onBlur={() => handleBlur('confirmPassword')}
-              />
-              <button
-                type="button"
-                className="auth-toggle-password"
-                onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <EyeIcon visible={showPassword} />
-              </button>
+        ) : (
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="reset-password">New Password</label>
+              <div className="auth-password-wrapper">
+                <input
+                  id="reset-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className={getInputClassName('password')}
+                  placeholder="Enter new password"
+                  autoComplete="new-password"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  onBlur={() => handleBlur('password')}
+                />
+                <button
+                  type="button"
+                  className="auth-toggle-password"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <EyeIcon visible={showPassword} />
+                </button>
+              </div>
+              {shouldShowError('password') && <p className="auth-error">{errors.password}</p>}
             </div>
-            {shouldShowError('confirmPassword') && <p className="auth-error">{errors.confirmPassword}</p>}
+
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="reset-confirm-password">Confirm Password</label>
+              <div className="auth-password-wrapper">
+                <input
+                  id="reset-confirm-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className={getInputClassName('confirmPassword')}
+                  placeholder="Confirm new password"
+                  autoComplete="new-password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                  onBlur={() => handleBlur('confirmPassword')}
+                />
+                <button
+                  type="button"
+                  className="auth-toggle-password"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <EyeIcon visible={showPassword} />
+                </button>
+              </div>
+              {shouldShowError('confirmPassword') && <p className="auth-error">{errors.confirmPassword}</p>}
+            </div>
+
+            <button type="submit" className="auth-button" disabled={!isFormValid}>Reset Password</button>
+          </form>
+        )}
+
+        {!resetComplete && (
+          <div className="auth-footer">
+            <Link to="/login" className="auth-link">Return to Login</Link>
           </div>
-
-          <button type="submit" className="auth-button" disabled={!isFormValid}>Reset Password</button>
-        </form>
-
-        <div className="auth-footer">
-          <Link to="/login" className="auth-link">Return to Login</Link>
-        </div>
+        )}
       </div>
     </div>
   );
