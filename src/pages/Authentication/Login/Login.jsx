@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -246,6 +246,18 @@ const authStyles = `
     color: #6b7280;
   }
 
+  .auth-success {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
   @media (max-width: 480px) {
     .auth-card {
       padding: 32px 24px;
@@ -281,6 +293,29 @@ function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const successTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function showSuccess(message) {
+    setSuccessMessage(message);
+
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
+
+    successTimeoutRef.current = setTimeout(() => {
+      setSuccessMessage('');
+      successTimeoutRef.current = null;
+    }, 3000);
+  }
 
   const errors = {
     email: validateLoginEmail(formData.email),
@@ -323,6 +358,8 @@ function Login() {
     if (!isFormValid) {
       return;
     }
+
+    showSuccess('Login successful.');
   }
 
   return (
@@ -332,6 +369,8 @@ function Login() {
         <div className="auth-logo">LOGO</div>
         <h1 className="auth-heading">Welcome Back</h1>
         <p className="auth-subheading">Sign in to your account to continue</p>
+
+        {successMessage && <div className="auth-success">{successMessage}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-field">

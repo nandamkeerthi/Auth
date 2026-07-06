@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -168,6 +168,18 @@ const authStyles = `
     text-decoration: underline;
   }
 
+  .auth-success {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
   @media (max-width: 480px) {
     .auth-card {
       padding: 32px 24px;
@@ -183,6 +195,29 @@ function ForgotPassword() {
   const [formData, setFormData] = useState({ email: '' });
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const successTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function showSuccess(message) {
+    setSuccessMessage(message);
+
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
+
+    successTimeoutRef.current = setTimeout(() => {
+      setSuccessMessage('');
+      successTimeoutRef.current = null;
+    }, 3000);
+  }
 
   const errors = {
     email: validateEmail(formData.email),
@@ -224,6 +259,11 @@ function ForgotPassword() {
     if (!isFormValid) {
       return;
     }
+
+    showSuccess('Password reset link has been sent to your registered email.');
+    setFormData({ email: '' });
+    setTouched({});
+    setSubmitted(false);
   }
 
   return (
@@ -234,6 +274,8 @@ function ForgotPassword() {
         <p className="auth-subheading">
           Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
+
+        {successMessage && <div className="auth-success">{successMessage}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
