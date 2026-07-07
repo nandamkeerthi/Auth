@@ -1,0 +1,13 @@
+# Frontend
+Frontend/node_modules/
+Frontend/dist/
+
+# Backend
+Backend/bin/
+Backend/obj/
+
+# Local environment
+node_modules/
+dist/
+.env
+.env.*
