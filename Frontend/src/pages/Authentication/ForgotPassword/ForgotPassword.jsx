@@ -208,6 +208,8 @@ function ForgotPassword() {
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const errors = {
     email: validateEmail(formData.email),
@@ -242,30 +244,36 @@ function ForgotPassword() {
     return (touched[field] || submitted) && errors[field];
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setSubmitted(true);
+    setSubmitError('');
 
     if (!isFormValid) {
       return;
     }
 
-    // TODO: Call POST /forgot-password API
-  //
-  // Backend will:
-  // 1. Verify email
-  // 2. Generate secure reset token
-  // 3. Store token in database
-  // 4. Send password reset email
-  //
-  // Expected request body:
-  // { email: formData.email }
-  //
-  // The .NET backend will verify the email exists, generate a secure token,
-  // store it in the database, and send a real email containing a link such as:
-  // https://your-domain.com/reset-password?token=<secure-token>
+    setIsSubmitting(true);
 
-    setRequestSent(true);
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to process password reset request.');
+      }
+
+      setRequestSent(true);
+    } catch (error) {
+      setSubmitError(error.message || 'Unable to process password reset request.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -282,10 +290,6 @@ function ForgotPassword() {
             <div className="auth-success">
               If an account exists with this email address, a password reset link will be sent.
             </div>
-            <p className="auth-info-note">
-              Currently this project is running in frontend-only mode.
-              A real password reset email will be sent after the backend is integrated.
-            </p>
           </>
         ) : (
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
@@ -304,7 +308,11 @@ function ForgotPassword() {
               {shouldShowError('email') && <p className="auth-error">{errors.email}</p>}
             </div>
 
-            <button type="submit" className="auth-button" disabled={!isFormValid}>Send Reset Link</button>
+            {submitError && <p className="auth-error">{submitError}</p>}
+
+            <button type="submit" className="auth-button" disabled={!isFormValid || isSubmitting}>
+              {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+            </button>
           </form>
         )}
 
